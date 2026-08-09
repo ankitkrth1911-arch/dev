@@ -15,35 +15,63 @@ app.use(express.static("public"));
 // Simple health check (per deployment best practice)
 app.get("/health", (req, res) => res.status(200).json({ status: "ok" }));
 
-// Shells out to the locally-installed swytchcode CLI for a policy-controlled
-// API execution (auth, retries, schema validation) instead of hand-rolling
-// fetch/retry logic for the GitHub file-fetch feature below.
-// Requires: swytchcode CLI installed, `swytchcode init` + `swytchcode get github`
-// + `swytchcode add <canonical_id>` already run once in this project.
-const { execFile } = require("child_process");
-app.post("/api/swytch-exec", (req, res) => {
-  const { toolId, args } = req.body;
-  if (!toolId) return res.status(400).json({ error: "toolId is required" });
+// Direct GitHub REST API fetch for the "Load from GitHub" feature.
+// (Swapped out the Swytchcode CLI shell-out for this — the CLI has to be
+// installed separately on every machine/server that runs this app, which
+// breaks on Render since it's not part of the deployed image. This plain
+// fetch() needs nothing extra to work.)
+// Optional: set GITHUB_TOKEN in .env to raise GitHub's rate limit and allow
+// fetching from private repos you have access to.
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
-  // Real CLI syntax: swytchcode exec <canonical_id> --key value --key2 value2
-  const flagArgs = Object.entries(args || {}).flatMap(([k, v]) => [`--${k}`, String(v)]);
+app.post("/api/github-fetch", async (req, res) => {
+  try {
+    const { owner, repo } = req.body;
+    if (!owner || !repo) {
+      return res.status(400).json({ error: "owner and repo are required" });
+    }
 
-  execFile(
-    "swytchcode",
-    ["exec", toolId, ...flagArgs],
-    { timeout: 15000 },
-    (err, stdout, stderr) => {
-      if (err) {
-        console.error("swytchcode exec failed:", stderr || err.message);
-        return res.status(502).json({ error: "swytchcode exec failed", detail: stderr || err.message });
+    const headers = {
+      Accept: "application/vnd.github.v3+json",
+      "User-Agent": "deploydoc-ai",
+    };
+    if (GITHUB_TOKEN) headers.Authorization = `token ${GITHUB_TOKEN}`;
+
+    // Try package.json first, then requirements.txt.
+    const candidates = ["package.json", "requirements.txt"];
+    let found = null;
+
+    for (const path of candidates) {
+      const ghRes = await fetch(
+        `https://api.github.com/repos/${owner}/${repo}/contents/${path}`,
+        { headers }
+      );
+      if (ghRes.ok) {
+        const data = await ghRes.json();
+        const content = Buffer.from(data.content, "base64").toString("utf-8");
+        found = { path, content };
+        break;
       }
-      try {
-        res.json(JSON.parse(stdout));
-      } catch {
-        res.json({ raw: stdout });
+      if (ghRes.status !== 404) {
+        const errText = await ghRes.text();
+        return res.status(ghRes.status).json({
+          error: `GitHub API error (${ghRes.status})`,
+          detail: errText,
+        });
       }
     }
-  );
+
+    if (!found) {
+      return res.status(404).json({
+        error: `Couldn't find package.json or requirements.txt in ${owner}/${repo}. Check the repo name and that it's public.`,
+      });
+    }
+
+    res.json({ path: found.path, content: found.content });
+  } catch (err) {
+    console.error("github-fetch failed:", err);
+    res.status(500).json({ error: "GitHub fetch failed: " + err.message });
+  }
 });
 
 const SYSTEM_PROMPT = `You are an AI DevOps & Deployment Assistant.
