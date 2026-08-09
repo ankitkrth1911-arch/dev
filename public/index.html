@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DeployDoc AI — DevOps & Deployment Assistant</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.3/tailwind.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --grad-1:#6366f1; --grad-2:#a855f7; --grad-3:#22d3ee; }
+  * { font-family: 'Space Grotesk', sans-serif; }
+  code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+  body { background:#0a0a12; color:#e5e7eb; overflow-x:hidden; }
+  .blob {
+    position:fixed; border-radius:50%; filter: blur(90px); opacity:0.35; z-index:0; pointer-events:none;
+    animation: float 14s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(30px,-40px) scale(1.1);} }
+  .glass {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+  }
+  .glass-input {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .glass-input:focus { border-color: rgba(168,85,247,0.6); outline:none; box-shadow: 0 0 0 3px rgba(168,85,247,0.15); }
+  .grad-text { background: linear-gradient(90deg, var(--grad-1), var(--grad-2), var(--grad-3)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .grad-btn { background: linear-gradient(90deg, var(--grad-1), var(--grad-2)); transition: all .2s; }
+  .grad-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+  .grad-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .tab-btn.active { background: rgba(255,255,255,0.08); color:#fff; border-color: rgba(168,85,247,0.5); }
+  .code-block { background:#08080c; border:1px solid rgba(255,255,255,0.08); max-height:420px; overflow:auto; white-space:pre; }
+  .scrollbar-thin::-webkit-scrollbar { width:6px; height:6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:10px; }
+  .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color:#a855f7; border-radius:50%; width:20px; height:20px; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .status-ok { color:#34d399; }
+  .status-missing { color:#f87171; }
+  .status-warning { color:#fbbf24; }
+  .fade-in { animation: fadeIn .4s ease both; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+</style>
+</head>
+<body class="min-h-screen relative">
+
+  <div class="blob w-[500px] h-[500px] bg-indigo-600 top-[-150px] left-[-150px]"></div>
+  <div class="blob w-[400px] h-[400px] bg-fuchsia-600 top-[40%] right-[-100px]" style="animation-delay:3s"></div>
+  <div class="blob w-[350px] h-[350px] bg-cyan-500 bottom-[-100px] left-[30%]" style="animation-delay:6s"></div>
+
+  <div class="relative z-10 max-w-6xl mx-auto px-5 py-10">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-10 flex-wrap gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl grad-btn flex items-center justify-center text-xl">🛠️</div>
+        <div>
+          <h1 class="text-2xl font-bold">DeployDoc <span class="grad-text">AI</span></h1>
+          <p class="text-xs text-gray-400">AI DevOps & Deployment Assistant</p>
+        </div>
+      </div>
+      <span class="text-xs px-3 py-1.5 rounded-full glass text-gray-300">⚡ Powered by Groq</span>
+    </header>
+
+    <!-- Input Card -->
+    <div class="glass rounded-2xl p-6 mb-8 fade-in">
+      <div class="grid md:grid-cols-3 gap-4 mb-4">
+        <div class="md:col-span-1">
+          <label class="text-sm text-gray-400 mb-2 block">Target platform</label>
+          <select id="platform" class="w-full glass-input rounded-lg px-3 py-2.5 text-sm">
+            <option value="docker">Docker (generic)</option>
+            <option value="render">Render</option>
+            <option value="vercel">Vercel</option>
+            <option value="netlify">Netlify</option>
+          </select>
+        </div>
+        <div class="md:col-span-2 flex items-end">
+          <p class="text-xs text-gray-500">Paste your package.json / requirements.txt / repo structure below. Add an error log if something's failing.</p>
+        </div>
+      </div>
+
+      <label class="text-sm text-gray-400 mb-2 block">Load from GitHub <span class="text-gray-600">(via Swytchcode — owner/repo, e.g. expressjs/express)</span></label>
+      <div class="flex gap-2 mb-4">
+        <input id="githubRepo" type="text" placeholder="owner/repo" class="flex-1 glass-input rounded-lg px-3 py-2.5 text-sm mono" />
+        <button onclick="loadFromGithub()" id="githubBtn" class="glass px-4 py-2.5 rounded-lg text-sm hover:bg-white/10 whitespace-nowrap">📥 Fetch via Swytchcode</button>
+      </div>
+      <p id="githubError" class="text-red-400 text-xs mb-4 hidden"></p>
+
+      <label class="text-sm text-gray-400 mb-2 block">Repo info <span class="text-gray-600">(package.json, requirements.txt, or a plain description of your stack)</span></label>
+      <textarea id="repoInfo" rows="7" placeholder='e.g. Node 18, Express API, package.json:
+{
+  "scripts": { "start": "node server.js", "build": "tsc" },
+  "dependencies": { "express": "^4.19.2" }
+}' class="w-full glass-input rounded-lg px-3 py-2.5 text-sm mono mb-4 scrollbar-thin"></textarea>
+
+      <label class="text-sm text-gray-400 mb-2 block">Build / deploy error log <span class="text-gray-600">(optional)</span></label>
+      <textarea id="errorLog" rows="4" placeholder="Paste a failed build/deploy log here if you have one..." class="w-full glass-input rounded-lg px-3 py-2.5 text-sm mono mb-5 scrollbar-thin"></textarea>
+
+      <button id="analyzeBtn" onclick="analyze()" class="grad-btn text-white font-semibold px-6 py-3 rounded-lg flex items-center gap-2">
+        <span id="btnText">🚀 Analyze & Generate</span>
+      </button>
+      <p id="errorMsg" class="text-red-400 text-sm mt-3 hidden"></p>
+    </div>
+
+    <!-- Results -->
+    <div id="results" class="hidden fade-in">
+
+      <div class="glass rounded-2xl p-6 mb-6">
+        <h2 class="text-sm uppercase tracking-wide text-gray-400 mb-2">Summary</h2>
+        <p id="summary" class="text-gray-200 leading-relaxed"></p>
+        <div id="rootCauseBlock" class="hidden mt-4 pt-4 border-t border-white/10">
+          <h3 class="text-sm uppercase tracking-wide text-red-300 mb-1">Root Cause</h3>
+          <p id="rootCause" class="text-gray-300 text-sm mb-3"></p>
+          <h3 class="text-sm uppercase tracking-wide text-emerald-300 mb-1">Fix</h3>
+          <p id="fix" class="text-gray-300 text-sm whitespace-pre-line"></p>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="flex gap-2 mb-4 flex-wrap">
+        <button class="tab-btn active glass px-4 py-2 rounded-lg text-sm border" data-tab="dockerfile">📦 Dockerfile</button>
+        <button class="tab-btn glass px-4 py-2 rounded-lg text-sm border border-transparent" data-tab="ci">⚙️ CI/CD</button>
+        <button class="tab-btn glass px-4 py-2 rounded-lg text-sm border border-transparent" data-tab="platform">🌐 Platform Config</button>
+        <button class="tab-btn glass px-4 py-2 rounded-lg text-sm border border-transparent" data-tab="env">🔑 Env Vars</button>
+        <button class="tab-btn glass px-4 py-2 rounded-lg text-sm border border-transparent" data-tab="checklist">✅ Checklist</button>
+      </div>
+
+      <div class="glass rounded-2xl p-6">
+        <div id="tab-dockerfile" class="tab-panel">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs text-gray-500">Dockerfile</span>
+            <button onclick="copyText('dockerfileText')" class="text-xs text-gray-400 hover:text-white">📋 Copy</button>
+          </div>
+          <pre id="dockerfileText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
+          <div class="flex justify-between items-center mt-4 mb-2">
+            <span class="text-xs text-gray-500">.dockerignore</span>
+            <button onclick="copyText('dockerignoreText')" class="text-xs text-gray-400 hover:text-white">📋 Copy</button>
+          </div>
+          <pre id="dockerignoreText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
+        </div>
+
+        <div id="tab-ci" class="tab-panel hidden">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs text-gray-500">.github/workflows/deploy.yml</span>
+            <button onclick="copyText('ciText')" class="text-xs text-gray-400 hover:text-white">📋 Copy</button>
+          </div>
+          <pre id="ciText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
+        </div>
+
+        <div id="tab-platform" class="tab-panel hidden">
+          <div class="flex justify-between items-center mb-2">
+            <span id="platformFilename" class="text-xs text-gray-500">Platform config</span>
+            <button onclick="copyText('platformText')" class="text-xs text-gray-400 hover:text-white">📋 Copy</button>
+          </div>
+          <pre id="platformText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
+        </div>
+
+        <div id="tab-env" class="tab-panel hidden">
+          <div id="envList" class="space-y-2"></div>
+        </div>
+
+        <div id="tab-checklist" class="tab-panel hidden">
+          <div id="checklistList" class="space-y-2 mb-4"></div>
+          <div class="pt-4 border-t border-white/10">
+            <h3 class="text-sm uppercase tracking-wide text-gray-400 mb-1">Rollback Plan</h3>
+            <p id="rollback" class="text-gray-300 text-sm"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab-btn');
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+    });
+  });
+
+  function copyText(id) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+    event.target.innerText = '✅ Copied';
+    setTimeout(() => event.target.innerText = '📋 Copy', 1200);
+  }
+
+  async function loadFromGithub() {
+    const repo = document.getElementById('githubRepo').value.trim();
+    const btn = document.getElementById('githubBtn');
+    const errEl = document.getElementById('githubError');
+    errEl.classList.add('hidden');
+
+    if (!repo.includes('/')) {
+      errEl.innerText = 'Enter as owner/repo, e.g. expressjs/express';
+      errEl.classList.remove('hidden');
+      return;
+    }
+    const [owner, name] = repo.split('/');
+    btn.disabled = true;
+    btn.innerText = '⏳ Fetching...';
+
+    try {
+      // toolId here must match the canonical_id you get back from
+      // `swytchcode list methods github` after running `swytchcode get github`
+      // and `swytchcode add <canonical_id>` once locally.
+      const res = await fetch('/api/swytch-exec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toolId: 'github.repos.getContent',
+          args: { owner, repo: name, path: 'package.json' }
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fetch failed');
+
+      const content = data.content ? atob(data.content.replace(/\n/g, '')) : JSON.stringify(data, null, 2);
+      document.getElementById('repoInfo').value = content;
+    } catch (err) {
+      errEl.innerText = err.message + ' — make sure the Swytchcode CLI is installed and github is added (see README).';
+      errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btn.innerText = '📥 Fetch via Swytchcode';
+    }
+  }
+
+  async function analyze() {
+    const repoInfo = document.getElementById('repoInfo').value.trim();
+    const errorLog = document.getElementById('errorLog').value.trim();
+    const platform = document.getElementById('platform').value;
+    const btn = document.getElementById('analyzeBtn');
+    const btnText = document.getElementById('btnText');
+    const errorMsg = document.getElementById('errorMsg');
+
+    errorMsg.classList.add('hidden');
+
+    if (!repoInfo) {
+      errorMsg.innerText = 'Please paste some repo info first.';
+      errorMsg.classList.remove('hidden');
+      return;
+    }
+
+    btn.disabled = true;
+    btnText.innerHTML = '<span class="spinner inline-block align-middle mr-2"></span> Analyzing...';
+
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoInfo, errorLog, platform })
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      renderResults(data);
+    } catch (err) {
+      errorMsg.innerText = err.message;
+      errorMsg.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+      btnText.innerText = '🚀 Analyze & Generate';
+    }
+  }
+
+  function renderResults(data) {
+    document.getElementById('results').classList.remove('hidden');
+    document.getElementById('summary').innerText = data.summary || '—';
+
+    if (data.rootCause) {
+      document.getElementById('rootCauseBlock').classList.remove('hidden');
+      document.getElementById('rootCause').innerText = data.rootCause;
+      document.getElementById('fix').innerText = data.fix || '';
+    } else {
+      document.getElementById('rootCauseBlock').classList.add('hidden');
+    }
+
+    document.getElementById('dockerfileText').innerText = data.dockerfile || '# Not generated';
+    document.getElementById('dockerignoreText').innerText = data.dockerignore || '# Not generated';
+    document.getElementById('ciText').innerText = data.githubActionsWorkflow || '# Not generated';
+
+    const pc = data.platformConfig || {};
+    document.getElementById('platformFilename').innerText = pc.filename || 'Platform config';
+    document.getElementById('platformText').innerText = pc.contents || '(Not applicable for this platform)';
+
+    const envList = document.getElementById('envList');
+    envList.innerHTML = '';
+    (data.envVars || []).forEach(v => {
+      const div = document.createElement('div');
+      div.className = 'glass-input rounded-lg px-4 py-3 flex items-start justify-between gap-3';
+      div.innerHTML = `
+        <div>
+          <span class="mono text-sm text-purple-300">${v.name}</span>
+          <p class="text-xs text-gray-400 mt-1">${v.note || ''}</p>
+        </div>
+        <span class="text-xs px-2 py-1 rounded ${v.required ? 'bg-red-500/20 text-red-300' : 'bg-gray-500/20 text-gray-300'}">${v.required ? 'required' : 'optional'}</span>
+      `;
+      envList.appendChild(div);
+    });
+    if (!(data.envVars || []).length) envList.innerHTML = '<p class="text-gray-500 text-sm">No environment variables detected.</p>';
+
+    const checklistList = document.getElementById('checklistList');
+    checklistList.innerHTML = '';
+    (data.checklist || []).forEach(item => {
+      const icon = item.status === 'ok' ? '✅' : item.status === 'missing' ? '❌' : '⚠️';
+      const colorClass = item.status === 'ok' ? 'status-ok' : item.status === 'missing' ? 'status-missing' : 'status-warning';
+      const div = document.createElement('div');
+      div.className = 'glass-input rounded-lg px-4 py-3';
+      div.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span>${icon}</span>
+          <span class="text-sm font-medium ${colorClass}">${item.item}</span>
+        </div>
+        ${item.note ? `<p class="text-xs text-gray-400 mt-1 ml-6">${item.note}</p>` : ''}
+      `;
+      checklistList.appendChild(div);
+    });
+
+    document.getElementById('rollback').innerText = data.rollback || '—';
+
+    document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+</body>
+</html>
