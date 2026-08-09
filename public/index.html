@@ -81,7 +81,7 @@
         </div>
       </div>
 
-      <label class="text-sm text-gray-400 mb-2 block">Load from GitHub <span class="text-gray-600">(via Swytchcode — owner/repo, e.g. expressjs/express)</span></label>
+      <label class="text-sm text-gray-400 mb-2 block">Load from GitHub <span class="text-gray-600">(owner/repo or full URL, e.g. expressjs/express)</span></label>
       <div class="flex gap-2 mb-4">
         <input id="githubRepo" type="text" placeholder="owner/repo" class="flex-1 glass-input rounded-lg px-3 py-2.5 text-sm mono" />
         <button onclick="loadFromGithub()" id="githubBtn" class="glass px-4 py-2.5 rounded-lg text-sm hover:bg-white/10 whitespace-nowrap">📥 Fetch from GitHub</button>
@@ -192,17 +192,24 @@
   }
 
   async function loadFromGithub() {
-    const repo = document.getElementById('githubRepo').value.trim();
+    let repo = document.getElementById('githubRepo').value.trim();
     const btn = document.getElementById('githubBtn');
     const errEl = document.getElementById('githubError');
     errEl.classList.add('hidden');
 
-    if (!repo.includes('/')) {
-      errEl.innerText = 'Enter as owner/repo, e.g. expressjs/express';
+    // Accept full GitHub URLs (https://github.com/owner/repo, with or
+    // without trailing slash/.git) as well as plain "owner/repo".
+    repo = repo.replace(/^https?:\/\/(www\.)?github\.com\//i, '')
+                .replace(/\.git$/i, '')
+                .replace(/\/+$/, '');
+
+    const parts = repo.split('/').filter(Boolean);
+    if (parts.length < 2) {
+      errEl.innerText = 'Enter as owner/repo, e.g. expressjs/express (a full github.com URL also works)';
       errEl.classList.remove('hidden');
       return;
     }
-    const [owner, name] = repo.split('/');
+    const [owner, name] = parts;
     btn.disabled = true;
     btn.innerText = '⏳ Fetching...';
 
