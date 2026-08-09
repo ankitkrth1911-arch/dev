@@ -6,168 +6,266 @@
 <title>DeployDoc AI — DevOps & Deployment Assistant</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/3.4.3/tailwind.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --grad-1:#6366f1; --grad-2:#a855f7; --grad-3:#22d3ee; }
-  * { font-family: 'Space Grotesk', sans-serif; }
+  :root {
+    /* palette: sky #A0D2EB, mist #E5EAF5, lilac #D0BDF4, violet #8458B3, slate #494D5F */
+    --sky:       #A0D2EB;
+    --mist:      #E5EAF5;
+    --lilac:     #D0BDF4;
+    --violet:    #8458B3;
+    --slate:     #494D5F;
+
+    --bg:        #EDE6F9;
+    --surface:   #ffffff;
+    --surface-2: var(--mist);
+    --border:    #DDE2F0;
+    --border-2:  #CBC3EA;
+    --text:      var(--slate);
+    --text-dim:  #6C7086;
+    --text-faint:#9A9FB5;
+    --accent:    var(--violet);
+    --accent-hi: #6E4593;
+    --accent-soft: #F1EAFB;
+    --ok:        #1E9E63;
+    --ok-soft:   #E7F8EF;
+    --danger:    #D9534F;
+    --danger-soft:#FBEBEA;
+    --warn:      #C58A2A;
+  }
+  * { font-family: 'Inter', sans-serif; }
+  h1, h2, h3, .display { font-family: 'Sora', sans-serif; }
   code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
-  body { background:#0a0a12; color:#e5e7eb; overflow-x:hidden; }
-  .blob {
-    position:fixed; border-radius:50%; filter: blur(90px); opacity:0.35; z-index:0; pointer-events:none;
-    animation: float 14s ease-in-out infinite;
+
+  body {
+    background:
+      radial-gradient(1200px 600px at 50% -15%, rgba(132,88,179,0.35), transparent 60%),
+      radial-gradient(900px 500px at 90% 10%, rgba(208,189,244,0.6), transparent 55%),
+      radial-gradient(900px 500px at 5% 30%, rgba(160,210,235,0.35), transparent 55%),
+      linear-gradient(180deg, #E7DCF7 0%, #E2D6F3 40%, #DCD0EE 100%);
+    color: var(--text);
+    overflow-x:hidden;
   }
-  @keyframes float { 0%,100%{ transform: translate(0,0) scale(1);} 50%{ transform: translate(30px,-40px) scale(1.1);} }
-  .glass {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    backdrop-filter: blur(20px);
+
+  .shell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(73,77,95,0.05), 0 20px 40px -20px rgba(132,88,179,0.25);
+    overflow: hidden;
   }
-  .glass-input {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.1);
+  .shell-top {
+    height: 5px;
+    background: linear-gradient(90deg, var(--sky), var(--lilac), var(--violet));
   }
-  .glass-input:focus { border-color: rgba(168,85,247,0.6); outline:none; box-shadow: 0 0 0 3px rgba(168,85,247,0.15); }
-  .grad-text { background: linear-gradient(90deg, var(--grad-1), var(--grad-2), var(--grad-3)); -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .grad-btn { background: linear-gradient(90deg, var(--grad-1), var(--grad-2)); transition: all .2s; }
-  .grad-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
-  .grad-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
-  .tab-btn.active { background: rgba(255,255,255,0.08); color:#fff; border-color: rgba(168,85,247,0.5); }
-  .code-block { background:#08080c; border:1px solid rgba(255,255,255,0.08); max-height:420px; overflow:auto; white-space:pre; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .field {
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    color: var(--text);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field::placeholder { color: var(--text-faint); }
+  .field:focus { border-color: var(--violet); outline:none; box-shadow: 0 0 0 3px var(--accent-soft); }
+
+  .btn-primary {
+    background: linear-gradient(90deg, var(--violet), #9A6BC4);
+    color: #ffffff;
+    font-weight: 600;
+    transition: all .15s;
+    box-shadow: 0 1px 2px rgba(132,88,179,0.2), 0 8px 20px -8px rgba(132,88,179,0.55);
+  }
+  .btn-primary:hover { filter: brightness(1.06); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .btn-ghost {
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    color: var(--text-dim);
+    font-weight: 500;
+    transition: all .15s;
+  }
+  .btn-ghost:hover { border-color: var(--violet); color: var(--accent-hi); background: var(--accent-soft); }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-dim);
+  }
+  .hint { color: var(--text-faint); }
+
+  .tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 13px;
+    transition: all .15s;
+  }
+  .tab-btn:hover { border-color: var(--border-2); color: var(--text); }
+  .tab-btn.active { background: var(--accent-soft); border-color: var(--violet); color: var(--accent-hi); }
+
+  .code-block { background:#F7F5FB; border:1px solid var(--border); max-height:420px; overflow:auto; white-space:pre; color:#3a3d4d; }
   .scrollbar-thin::-webkit-scrollbar { width:6px; height:6px; }
-  .scrollbar-thin::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.15); border-radius:10px; }
-  .spinner { border: 3px solid rgba(255,255,255,0.1); border-top-color:#a855f7; border-radius:50%; width:20px; height:20px; animation:spin .7s linear infinite; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background:var(--border-2); border-radius:10px; }
+
+  .spinner { border: 2.5px solid rgba(255,255,255,0.4); border-top-color:#ffffff; border-radius:50%; width:16px; height:16px; animation:spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  .status-ok { color:#34d399; }
-  .status-missing { color:#f87171; }
-  .status-warning { color:#fbbf24; }
-  .fade-in { animation: fadeIn .4s ease both; }
-  @keyframes fadeIn { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+
+  .status-dot { width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0; }
+  .status-ok       { background: var(--ok); }
+  .status-missing  { background: var(--danger); }
+  .status-warning  { background: var(--warn); }
+
+  .fade-in { animation: fadeIn .35s ease both; }
+  @keyframes fadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  .field-row { display:grid; grid-template-columns: 200px 1fr; gap:1.5rem; align-items:start; }
+  @media (max-width:768px){ .field-row { grid-template-columns: 1fr; gap:.5rem; } }
+
+  ::selection { background: var(--lilac); }
 </style>
 </head>
 <body class="min-h-screen relative">
 
-  <div class="blob w-[500px] h-[500px] bg-indigo-600 top-[-150px] left-[-150px]"></div>
-  <div class="blob w-[400px] h-[400px] bg-fuchsia-600 top-[40%] right-[-100px]" style="animation-delay:3s"></div>
-  <div class="blob w-[350px] h-[350px] bg-cyan-500 bottom-[-100px] left-[30%]" style="animation-delay:6s"></div>
+  <div class="relative z-10 max-w-4xl mx-auto px-5 py-10">
 
-  <div class="relative z-10 max-w-6xl mx-auto px-5 py-10">
+    <div class="shell fade-in">
+      <div class="shell-top"></div>
 
-    <!-- Header -->
-    <header class="flex items-center justify-between mb-10 flex-wrap gap-4">
-      <div class="flex items-center gap-3">
-        <div class="w-11 h-11 rounded-xl grad-btn flex items-center justify-center text-xl">🛠️</div>
-        <div>
-          <h1 class="text-2xl font-bold">DeployDoc <span class="grad-text">AI</span></h1>
-          <p class="text-xs text-gray-400">AI DevOps & Deployment Assistant</p>
-        </div>
-      </div>
-      <span class="text-xs px-3 py-1.5 rounded-full glass text-gray-300">⚡ Powered by Groq</span>
-    </header>
+      <div class="p-6 md:p-10">
 
-    <!-- Input Card -->
-    <div class="glass rounded-2xl p-6 mb-8 fade-in">
-      <div class="grid md:grid-cols-3 gap-4 mb-4">
-        <div class="md:col-span-1">
-          <label class="text-sm text-gray-400 mb-2 block">Target platform</label>
-          <select id="platform" class="w-full glass-input rounded-lg px-3 py-2.5 text-sm">
-            <option value="docker">Docker (generic)</option>
-            <option value="render">Render</option>
-            <option value="vercel">Vercel</option>
-            <option value="netlify">Netlify</option>
-          </select>
-        </div>
-        <div class="md:col-span-2 flex items-end">
-          <p class="text-xs text-gray-500">Paste your package.json / requirements.txt / repo structure below. Add an error log if something's failing.</p>
-        </div>
-      </div>
+        <!-- Header -->
+        <header class="flex items-center gap-3 mb-10 pb-6 border-b" style="border-color:var(--border)">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0" style="background:var(--accent-soft); color:var(--accent-hi);">⌘</div>
+          <div>
+            <h1 class="text-xl font-bold leading-tight display" style="color:var(--text)">DeployDoc <span style="color:var(--violet)">AI</span></h1>
+            <p class="text-xs mt-0.5" style="color:var(--text-faint)">DevOps &amp; Deployment Assistant</p>
+          </div>
+        </header>
 
-      <label class="text-sm text-gray-400 mb-2 block">Load from GitHub <span class="text-gray-600">(via Swytchcode — owner/repo, e.g. expressjs/express)</span></label>
-      <div class="flex gap-2 mb-4">
-        <input id="githubRepo" type="text" placeholder="owner/repo" class="flex-1 glass-input rounded-lg px-3 py-2.5 text-sm mono" />
-        <button onclick="loadFromGithub()" id="githubBtn" class="glass px-4 py-2.5 rounded-lg text-sm hover:bg-white/10 whitespace-nowrap">📥 Fetch via Swytchcode</button>
-      </div>
-      <p id="githubError" class="text-red-400 text-xs mb-4 hidden"></p>
+        <!-- Input Card -->
+        <div class="space-y-7">
 
-      <label class="text-sm text-gray-400 mb-2 block">Repo info <span class="text-gray-600">(package.json, requirements.txt, or a plain description of your stack)</span></label>
-      <textarea id="repoInfo" rows="7" placeholder='e.g. Node 18, Express API, package.json:
+          <div class="field-row">
+            <label for="platform" class="eyebrow pt-2.5 block">Target platform</label>
+            <div>
+              <select id="platform" class="w-full field rounded-lg px-3 py-2.5 text-sm">
+                <option value="docker">Docker (generic)</option>
+                <option value="render">Render</option>
+                <option value="vercel">Vercel</option>
+                <option value="netlify">Netlify</option>
+              </select>
+              <p class="text-xs mt-2 hint">Paste your package.json / requirements.txt / repo structure below. Add an error log if something's failing.</p>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="githubRepo" class="eyebrow pt-2.5 block">Load from GitHub <span class="block mt-1 font-normal hint" style="font-size:11px;">via Swytchcode — owner/repo</span></label>
+            <div>
+              <div class="flex flex-col sm:flex-row gap-2">
+                <input id="githubRepo" type="text" placeholder="owner/repo, e.g. expressjs/express" class="flex-1 field rounded-lg px-3 py-2.5 text-sm mono" />
+                <button onclick="loadFromGithub()" id="githubBtn" class="btn-ghost px-4 py-2.5 rounded-lg text-sm whitespace-nowrap">Fetch via Swytchcode</button>
+              </div>
+              <p id="githubError" class="text-xs mt-2 hidden" style="color:var(--danger)"></p>
+            </div>
+          </div>
+
+          <div class="field-row">
+            <label for="repoInfo" class="eyebrow pt-2.5 block">Repo info <span class="block mt-1 font-normal hint" style="font-size:11px;">package.json, requirements.txt, or a plain description</span></label>
+            <textarea id="repoInfo" rows="7" placeholder='e.g. Node 18, Express API, package.json:
 {
   "scripts": { "start": "node server.js", "build": "tsc" },
   "dependencies": { "express": "^4.19.2" }
-}' class="w-full glass-input rounded-lg px-3 py-2.5 text-sm mono mb-4 scrollbar-thin"></textarea>
-
-      <label class="text-sm text-gray-400 mb-2 block">Build / deploy error log <span class="text-gray-600">(optional)</span></label>
-      <textarea id="errorLog" rows="4" placeholder="Paste a failed build/deploy log here if you have one..." class="w-full glass-input rounded-lg px-3 py-2.5 text-sm mono mb-5 scrollbar-thin"></textarea>
-
-      <button id="analyzeBtn" onclick="analyze()" class="grad-btn text-white font-semibold px-6 py-3 rounded-lg flex items-center gap-2">
-        <span id="btnText">🚀 Analyze & Generate</span>
-      </button>
-      <p id="errorMsg" class="text-red-400 text-sm mt-3 hidden"></p>
-    </div>
-
-    <!-- Results -->
-    <div id="results" class="hidden fade-in">
-
-      <div class="glass rounded-2xl p-6 mb-6">
-        <h2 class="text-sm uppercase tracking-wide text-gray-400 mb-2">Summary</h2>
-        <p id="summary" class="text-gray-200 leading-relaxed"></p>
-        <div id="rootCauseBlock" class="hidden mt-4 pt-4 border-t border-white/10">
-          <h3 class="text-sm uppercase tracking-wide text-red-300 mb-1">Root Cause</h3>
-          <p id="rootCause" class="text-gray-300 text-sm mb-3"></p>
-          <h3 class="text-sm uppercase tracking-wide text-emerald-300 mb-1">Fix</h3>
-          <p id="fix" class="text-gray-300 text-sm whitespace-pre-line"></p>
-        </div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="flex gap-2 mb-4 flex-wrap">
-        <button class="tab-btn active glass px-4 py-2 rounded-lg text-sm border" data-tab="dockerfile">📦 Dockerfile</button>
-        <button class="tab-btn glass px-4 py-2 rounded-lg text-sm border border-transparent" data-tab="ci">⚙️ CI/CD</button>
-        <button class="tab-btn glass px-4 py-2 rounded-lg text-sm border border-transparent" data-tab="platform">🌐 Platform Config</button>
-        <button class="tab-btn glass px-4 py-2 rounded-lg text-sm border border-transparent" data-tab="env">🔑 Env Vars</button>
-        <button class="tab-btn glass px-4 py-2 rounded-lg text-sm border border-transparent" data-tab="checklist">✅ Checklist</button>
-      </div>
-
-      <div class="glass rounded-2xl p-6">
-        <div id="tab-dockerfile" class="tab-panel">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-xs text-gray-500">Dockerfile</span>
-            <button onclick="copyText('dockerfileText')" class="text-xs text-gray-400 hover:text-white">📋 Copy</button>
+}' class="w-full field rounded-lg px-3 py-2.5 text-sm mono scrollbar-thin"></textarea>
           </div>
-          <pre id="dockerfileText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
-          <div class="flex justify-between items-center mt-4 mb-2">
-            <span class="text-xs text-gray-500">.dockerignore</span>
-            <button onclick="copyText('dockerignoreText')" class="text-xs text-gray-400 hover:text-white">📋 Copy</button>
+
+          <div class="field-row">
+            <label for="errorLog" class="eyebrow pt-2.5 block">Error log <span class="block mt-1 font-normal hint" style="font-size:11px;">optional</span></label>
+            <textarea id="errorLog" rows="4" placeholder="Paste a failed build/deploy log here if you have one..." class="w-full field rounded-lg px-3 py-2.5 text-sm mono scrollbar-thin"></textarea>
           </div>
-          <pre id="dockerignoreText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
-        </div>
 
-        <div id="tab-ci" class="tab-panel hidden">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-xs text-gray-500">.github/workflows/deploy.yml</span>
-            <button onclick="copyText('ciText')" class="text-xs text-gray-400 hover:text-white">📋 Copy</button>
-          </div>
-          <pre id="ciText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
-        </div>
-
-        <div id="tab-platform" class="tab-panel hidden">
-          <div class="flex justify-between items-center mb-2">
-            <span id="platformFilename" class="text-xs text-gray-500">Platform config</span>
-            <button onclick="copyText('platformText')" class="text-xs text-gray-400 hover:text-white">📋 Copy</button>
-          </div>
-          <pre id="platformText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
-        </div>
-
-        <div id="tab-env" class="tab-panel hidden">
-          <div id="envList" class="space-y-2"></div>
-        </div>
-
-        <div id="tab-checklist" class="tab-panel hidden">
-          <div id="checklistList" class="space-y-2 mb-4"></div>
-          <div class="pt-4 border-t border-white/10">
-            <h3 class="text-sm uppercase tracking-wide text-gray-400 mb-1">Rollback Plan</h3>
-            <p id="rollback" class="text-gray-300 text-sm"></p>
+          <div class="flex flex-col items-center pt-6 border-t" style="border-color:var(--border)">
+            <button id="analyzeBtn" onclick="analyze()" class="btn-primary px-8 py-3 rounded-lg flex items-center justify-center gap-2 w-full sm:w-auto sm:min-w-[260px] text-sm">
+              <span id="btnText">Analyze &amp; Generate</span>
+            </button>
+            <p id="errorMsg" class="text-sm mt-3 hidden text-center" style="color:var(--danger)"></p>
           </div>
         </div>
+
+        <!-- Results -->
+        <div id="results" class="hidden fade-in mt-10">
+
+          <div class="card rounded-xl p-6 md:p-7 mb-6">
+            <h2 class="eyebrow mb-2">Summary</h2>
+            <p id="summary" class="leading-relaxed text-sm" style="color:var(--text)"></p>
+            <div id="rootCauseBlock" class="hidden mt-4 pt-4 border-t" style="border-color:var(--border)">
+              <h3 class="eyebrow mb-1" style="color:var(--danger)">Root Cause</h3>
+              <p id="rootCause" class="text-sm mb-3" style="color:var(--text-dim)"></p>
+              <h3 class="eyebrow mb-1" style="color:var(--ok)">Fix</h3>
+              <p id="fix" class="text-sm whitespace-pre-line" style="color:var(--text-dim)"></p>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+            <button class="tab-btn active px-3 py-2.5 rounded-lg text-center" data-tab="dockerfile">Dockerfile</button>
+            <button class="tab-btn px-3 py-2.5 rounded-lg text-center" data-tab="ci">CI/CD</button>
+            <button class="tab-btn px-3 py-2.5 rounded-lg text-center" data-tab="platform">Platform</button>
+            <button class="tab-btn px-3 py-2.5 rounded-lg text-center" data-tab="env">Env Vars</button>
+            <button class="tab-btn px-3 py-2.5 rounded-lg text-center col-span-2 sm:col-span-1" data-tab="checklist">Checklist</button>
+          </div>
+
+          <div class="card rounded-xl p-6 md:p-7">
+            <div id="tab-dockerfile" class="tab-panel">
+              <div class="flex justify-between items-center mb-2">
+                <span class="eyebrow">Dockerfile</span>
+                <button onclick="copyText('dockerfileText')" class="text-xs font-medium" style="color:var(--accent-hi)">Copy</button>
+              </div>
+              <pre id="dockerfileText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
+              <div class="flex justify-between items-center mt-4 mb-2">
+                <span class="eyebrow">.dockerignore</span>
+                <button onclick="copyText('dockerignoreText')" class="text-xs font-medium" style="color:var(--accent-hi)">Copy</button>
+              </div>
+              <pre id="dockerignoreText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
+            </div>
+
+            <div id="tab-ci" class="tab-panel hidden">
+              <div class="flex justify-between items-center mb-2">
+                <span class="eyebrow">.github/workflows/deploy.yml</span>
+                <button onclick="copyText('ciText')" class="text-xs font-medium" style="color:var(--accent-hi)">Copy</button>
+              </div>
+              <pre id="ciText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
+            </div>
+
+            <div id="tab-platform" class="tab-panel hidden">
+              <div class="flex justify-between items-center mb-2">
+                <span id="platformFilename" class="eyebrow">Platform config</span>
+                <button onclick="copyText('platformText')" class="text-xs font-medium" style="color:var(--accent-hi)">Copy</button>
+              </div>
+              <pre id="platformText" class="code-block rounded-lg p-4 text-sm mono scrollbar-thin"></pre>
+            </div>
+
+            <div id="tab-env" class="tab-panel hidden">
+              <div id="envList" class="space-y-2"></div>
+            </div>
+
+            <div id="tab-checklist" class="tab-panel hidden">
+              <div id="checklistList" class="space-y-2 mb-4"></div>
+              <div class="pt-4 border-t" style="border-color:var(--border)">
+                <h3 class="eyebrow mb-1">Rollback Plan</h3>
+                <p id="rollback" class="text-sm" style="color:var(--text-dim)"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -187,8 +285,8 @@
   function copyText(id) {
     const text = document.getElementById(id).innerText;
     navigator.clipboard.writeText(text);
-    event.target.innerText = '✅ Copied';
-    setTimeout(() => event.target.innerText = '📋 Copy', 1200);
+    event.target.innerText = 'Copied';
+    setTimeout(() => event.target.innerText = 'Copy', 1200);
   }
 
   async function loadFromGithub() {
@@ -204,7 +302,7 @@
     }
     const [owner, name] = repo.split('/');
     btn.disabled = true;
-    btn.innerText = '⏳ Fetching...';
+    btn.innerText = 'Fetching...';
 
     try {
       // toolId here must match the canonical_id you get back from
@@ -228,7 +326,7 @@
       errEl.classList.remove('hidden');
     } finally {
       btn.disabled = false;
-      btn.innerText = '📥 Fetch via Swytchcode';
+      btn.innerText = 'Fetch via Swytchcode';
     }
   }
 
@@ -269,7 +367,7 @@
       errorMsg.classList.remove('hidden');
     } finally {
       btn.disabled = false;
-      btnText.innerText = '🚀 Analyze & Generate';
+      btnText.innerText = 'Analyze & Generate';
     }
   }
 
@@ -297,31 +395,30 @@
     envList.innerHTML = '';
     (data.envVars || []).forEach(v => {
       const div = document.createElement('div');
-      div.className = 'glass-input rounded-lg px-4 py-3 flex items-start justify-between gap-3';
+      div.className = 'field rounded-lg px-4 py-3 flex items-start justify-between gap-3';
       div.innerHTML = `
         <div>
-          <span class="mono text-sm text-purple-300">${v.name}</span>
-          <p class="text-xs text-gray-400 mt-1">${v.note || ''}</p>
+          <span class="mono text-sm" style="color:var(--accent-hi)">${v.name}</span>
+          <p class="text-xs mt-1 hint">${v.note || ''}</p>
         </div>
-        <span class="text-xs px-2 py-1 rounded ${v.required ? 'bg-red-500/20 text-red-300' : 'bg-gray-500/20 text-gray-300'}">${v.required ? 'required' : 'optional'}</span>
+        <span class="text-xs px-2 py-1 rounded-full font-medium" style="background:${v.required ? 'var(--danger-soft)' : 'var(--surface-2)'}; color:${v.required ? 'var(--danger)' : 'var(--text-faint)'}">${v.required ? 'required' : 'optional'}</span>
       `;
       envList.appendChild(div);
     });
-    if (!(data.envVars || []).length) envList.innerHTML = '<p class="text-gray-500 text-sm">No environment variables detected.</p>';
+    if (!(data.envVars || []).length) envList.innerHTML = '<p class="text-sm hint">No environment variables detected.</p>';
 
     const checklistList = document.getElementById('checklistList');
     checklistList.innerHTML = '';
     (data.checklist || []).forEach(item => {
-      const icon = item.status === 'ok' ? '✅' : item.status === 'missing' ? '❌' : '⚠️';
-      const colorClass = item.status === 'ok' ? 'status-ok' : item.status === 'missing' ? 'status-missing' : 'status-warning';
+      const dotClass = item.status === 'ok' ? 'status-ok' : item.status === 'missing' ? 'status-missing' : 'status-warning';
       const div = document.createElement('div');
-      div.className = 'glass-input rounded-lg px-4 py-3';
+      div.className = 'field rounded-lg px-4 py-3';
       div.innerHTML = `
-        <div class="flex items-center gap-2">
-          <span>${icon}</span>
-          <span class="text-sm font-medium ${colorClass}">${item.item}</span>
+        <div class="flex items-center gap-2.5">
+          <span class="status-dot ${dotClass}"></span>
+          <span class="text-sm font-medium" style="color:var(--text)">${item.item}</span>
         </div>
-        ${item.note ? `<p class="text-xs text-gray-400 mt-1 ml-6">${item.note}</p>` : ''}
+        ${item.note ? `<p class="text-xs mt-1 ml-[18px] hint">${item.note}</p>` : ''}
       `;
       checklistList.appendChild(div);
     });
